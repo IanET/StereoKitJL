@@ -1,15 +1,9 @@
 import LibStereoKit as SK
 import Base.@kwdef
+import LibStereoKit: vec2, vec3, quat, color128, char16_t # Base SK types
 
-# Base SK types
-import LibStereoKit: vec2, vec3, quat, color128, char16_t
-
-macro u8_str(s) 
-    [reinterpret(Cchar, c) for c in transcode(UInt8, s)] 
-end
-macro u16_str(s) 
-    [reinterpret(char16_t, c) for c in transcode(UInt16, s)] 
-end
+macro u8_str(s) reinterpret(Cchar, transcode(UInt8, s)) end
+macro u16_str(s) reinterpret(char16_t, transcode(UInt16, s)) end
 
 const appname = u8"Project"
 const asset_folder = u8"assets"
