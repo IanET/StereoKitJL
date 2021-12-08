@@ -23,7 +23,6 @@ const rval2 = Ref(0.5f0)
 
 @kwdef mutable struct RenderState 
     ui_sprite::SK.sprite_t = SK.sprite_t(C_NULL)
-    # buffer::NTuple{128, Cchar} = tuple(zeros(Cchar, 128)...)
     buffer::Vector{Cchar} = zeros(Cchar, 128)
 end
 
@@ -45,8 +44,8 @@ function render(rs::RenderState)
     if SK.ui_button(u8"Press me!") > 0
         SK.ui_button(u8"DYNAMIC BUTTON!!")
     end
-    # SK.ui_text(u8"古池や\n蛙飛び込む\n水の音\n- Matsuo Basho")
-    # SK.ui_text(u8"Съешь же ещё этих мягких французских булок да выпей чаю. Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства. В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!")
+    SK.ui_text(u8"古池や 蛙飛び込む 水の音 - Matsuo Basho", SK.text_align_top_left)
+    SK.ui_text(u8"Съешь же ещё этих мягких французских булок да выпей чаю. Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства. В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!", SK.text_align_top_left)
     SK.ui_window_end()
 end
 
