@@ -4,18 +4,19 @@ import Base.@kwdef
 # Base SK types
 import LibStereoKit: vec2, vec3, quat, color128, char16_t
 
-# UTF8 and UTF16 byte vector converted to signed types
-reinterpret_Cchar(c) = reinterpret(Cchar, c)
-reinterpret_char16_t(c) = reinterpret(char16_t, c)
-macro u8_str(s) transcode(UInt8, s) .|> reinterpret_Cchar end
-macro u16_str(s) transcode(UInt16, s) .|> reinterpret_char16_t end
+macro u8_str(s) 
+    [reinterpret(Cchar, c) for c in transcode(UInt8, s)] 
+end
+macro u16_str(s) 
+    [reinterpret(char16_t, c) for c in transcode(UInt16, s)] 
+end
 
 const appname = u8"Project"
 const asset_folder = u8"assets"
 const white = color128(1, 1, 1, 1)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
-const window_pose = SK.pose_t(vec3(0.25, 0.25, -0.25), SK.quat_lookat(Ref(vec3(0.25,0.25,-0.25)), Ref(vec3(0,0.25,0))))
+const window_pose = SK.pose_t(vec3(0, 0.25, -0.25), SK.quat_lookat(Ref(vec3(0, 0, -0.25)), Ref(vec3(0, 0, 0))))
 const cm2m = 0.01f0
 const mm2m = 0.001f0
 const rval = Ref(0.5f0)
@@ -38,7 +39,7 @@ function render(rs::RenderState)
     SK.ui_hslider(u8"slider", rval, 0.0, 1.0, 0.2, 72mm2m, SK.ui_confirm_pinch)
     SK.ui_sameline()
     SK.ui_hslider(u8"slider2", rval2, 0.0, 1.0, 0.0, 72mm2m, SK.ui_confirm_push)
-    if SK.input_key(SK.key_mouse_left) != SK.button_state_inactive & SK.button_state_active
+    if SK.input_key(SK.key_mouse_left) & SK.button_state_active > 0
         SK.ui_image(rs.ui_sprite, vec2(6cm2m, 0cm2m))
     end
     if SK.ui_button(u8"Press me!") > 0
@@ -50,18 +51,17 @@ function render(rs::RenderState)
 end
 
 function main(rs::RenderState)
-    GC.@preserve appname asset_folder begin 
-        settings = SK.sk_settings_t(
-            pointer(appname),
-            pointer(asset_folder),
-            SK.display_mode_flatscreen,
-            SK.display_blend_any_transparent,
-            0,
-            SK.depth_mode_balanced,
-            SK.log_none,
-            0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
-        SK.sk_init(settings) 
-    end
+    # GC preserve?
+    settings = SK.sk_settings_t(
+        pointer(appname),
+        pointer(asset_folder),
+        SK.display_mode_flatscreen,
+        SK.display_blend_any_transparent,
+        0,
+        SK.depth_mode_balanced,
+        SK.log_none,
+        0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
+    SK.sk_init(settings) 
 
 	rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default");
 
