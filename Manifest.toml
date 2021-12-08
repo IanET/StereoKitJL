@@ -1,0 +1,14 @@
+# This file is machine-generated - editing it directly is not advised
+
+[[CEnum]]
+git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.4.1"
+
+[[LibStereoKit]]
+deps = ["CEnum"]
+git-tree-sha1 = "d5254016703a62a62e76eef9d1c5e328b9106c89"
+repo-rev = "main"
+repo-url = "https://github.com/IanET/LibStereoKit.git"
+uuid = "3c372614-ce37-4749-ae5f-a6d0327edbc0"
+version = "0.1.0"
