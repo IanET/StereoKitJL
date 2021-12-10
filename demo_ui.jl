@@ -15,10 +15,15 @@ const cm2m = 0.01f0
 const mm2m = 0.001f0
 const rval = Ref(0.5f0)
 const rval2 = Ref(0.5f0)
+const helmet_pose_matrix = SK.matrix_trs(
+    Ref(vec3(-0.25, 0, -0.5)), 
+    Ref(quat_identity), 
+    Ref(vec3(0.25, 0.25, 0.25)))
 
 @kwdef mutable struct RenderState 
     ui_sprite::SK.sprite_t = SK.sprite_t(C_NULL)
     buffer::Vector{Cchar} = zeros(Cchar, 128)
+    helmet::SK.model_t = SK.model_t(C_NULL)
 end
 
 const rs = RenderState()
@@ -42,6 +47,7 @@ function render(rs::RenderState)
     SK.ui_text(u8"古池や 蛙飛び込む 水の音 - Matsuo Basho", SK.text_align_top_left)
     SK.ui_text(u8"Съешь же ещё этих мягких французских булок да выпей чаю. Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства. В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!", SK.text_align_top_left)
     SK.ui_window_end()
+    SK.model_draw(rs.helmet, helmet_pose_matrix, white, SK.render_layer_0)
 end
 
 function main(rs::RenderState)
@@ -57,11 +63,22 @@ function main(rs::RenderState)
         0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
     SK.sk_init(settings) 
 
-	rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default");
+	rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default")
+    rs.helmet = SK.model_create_file(u8"DamagedHelmet.gltf", SK.shader_t(C_NULL))
 
-    while SK.sk_step(render_rs_c) > 0 end
-
-    SK.sk_shutdown()
+    if isinteractive()
+        @async begin
+            while SK.sk_step(render_rs_c) > 0
+                sleep(0.1)
+            end
+            SK.sk_shutdown()
+        end
+    else
+        while SK.sk_step(render_rs_c) > 0 
+            sleep(0)
+        end
+        SK.sk_shutdown()
+    end
 end
 
 main(rs)
