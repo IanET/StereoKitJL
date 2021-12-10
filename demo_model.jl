@@ -19,23 +19,21 @@ const rval2 = Ref(0.5f0)
     ui_sprite::SK.sprite_t = SK.sprite_t(C_NULL)
     buffer::Vector{Cchar} = zeros(Cchar, 128)
     helmet::SK.model_t = SK.model_t(C_NULL)
+    helmet_pose::SK.matrix =  SK.matrix_trs(
+        Ref(vec3(-0.25, 0, -0.5)),
+        Ref(SK.quat_from_angles(20, 170, 0)),
+        Ref(vec3(0.2, 0.2, 0.2)))
+end
+
+function render(rs::RenderState) 
+    SK.model_draw(rs.helmet, rs.helmet_pose, white, SK.render_layer_0)
 end
 
 const rs = RenderState()
 const render_rs() = render(rs)
 const render_rs_c = @cfunction(render_rs, Nothing, ())
 
-function render(rs::RenderState) 
-    q = SK.quat_from_angles(20, 170, 0)
-    m = SK.matrix_trs(
-        Ref(vec3(-0.25, 0, -0.5)),
-        Ref(q),
-        Ref(vec3(0.2, 0.2, 0.2)))
-    SK.model_draw(rs.helmet, m, white, SK.render_layer_0)
-end
-
 function mainloop(render_rs_c, sleeptime)
-    crender = @cfunction(render, Nothing, ())
     while SK.sk_step(render_rs_c) > 0
         sleep(sleeptime)
     end
