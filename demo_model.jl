@@ -19,28 +19,27 @@ const rval2 = Ref(0.5f0)
     ui_sprite::SK.sprite_t = SK.sprite_t(C_NULL)
     buffer::Vector{Cchar} = zeros(Cchar, 128)
     helmet::SK.model_t = SK.model_t(C_NULL)
-    helmet_pose::SK.matrix =  SK.matrix_trs(
-        Ref(vec3(-0.25, 0, -0.5)),
-        Ref(SK.quat_from_angles(20, 170, 0)),
-        Ref(vec3(0.2, 0.2, 0.2)))
+    helmet_pos::Ref{vec3} = Ref(vec3(-0.25, 0, -0.5))
+    helmet_ori::Ref{quat} = Ref(SK.quat_from_angles(20, 170, 0))
+    helmet_scale::Ref{vec3} = Ref(vec3(0.2, 0.2, 0.2))
 end
 
 function render(rs::RenderState) 
-    SK.model_draw(rs.helmet, rs.helmet_pose, white, SK.render_layer_0)
+    pose = SK.matrix_trs(rs.helmet_pos, rs.helmet_ori, rs.helmet_scale)
+    SK.model_draw(rs.helmet, pose, white, SK.render_layer_0)
 end
 
-const rs = RenderState()
-const render_rs() = render(rs)
-const render_rs_c = @cfunction(render_rs, Nothing, ())
+const grs = RenderState()
+const render_grs() = render(grs)
+const render_grs_c = @cfunction(render_grs, Nothing, ())
 
-function mainloop(render_rs_c, sleeptime)
+function renderloop(render_rs_c, sleeptime)
     while SK.sk_step(render_rs_c) > 0
         sleep(sleeptime)
     end
 end
 
-function main(rs::RenderState)
-    # GC preserve?
+function initsk()
     settings = SK.sk_settings_t(
         pointer(appname),
         pointer(asset_folder),
@@ -51,12 +50,20 @@ function main(rs::RenderState)
         SK.log_none,
         0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
     SK.sk_init(settings) 
+end
 
-	rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default")
+function loadassets(rs::RenderState)
+    rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default")
     rs.helmet = SK.model_create_file(u8"DamagedHelmet.gltf", SK.shader_t(C_NULL))
+end
 
-    mainloop(render_rs_c, 0)
+function main(rs::RenderState)
+    initsk()
+    loadassets(rs)
+
+    renderloop(render_grs_c, isinteractive() ? 0.1 : 0.0)
+
     SK.sk_shutdown()
 end
 
-main(rs)
+main(grs)
