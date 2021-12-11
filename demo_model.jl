@@ -4,12 +4,13 @@ import LibStereoKit: vec2, vec3, quat, color128, char16_t # Base SK types
 using Printf
 
 Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
-Base.transcode(::Type{char16_t}, s::String) = reinterpret(char16_t, transcode(UInt8, s))
 macro u8_str(s) transcode(Cchar, s) end
 macro u16_str(s) transcode(char16_t, s) end
 
+# NB Keep as global const so they don't get GC'd
 const appname = u8"Project"
 const asset_folder = u8"assets"
+
 const white = color128(1, 1, 1, 1)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
@@ -33,7 +34,7 @@ end
 function updatefps(rs::RenderState)
     rs.framecount += 1
     delta = time() - rs.frametime
-    if delta > 2.0
+    if delta > 1.0
         rs.fps = rs.framecount / delta
         rs.framecount = 0
         rs.frametime = time()
@@ -45,9 +46,9 @@ function render(rs::RenderState)
     head_pose = SK.input_head() |> unsafe_load
     window_pos = vec3(0, 0, -0.25)
     window_pose = SK.pose_t(window_pos, SK.quat_lookat(Ref(window_pos), Ref(head_pose.position)))
-    SK.ui_window_begin(u8"FPS", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_body, SK.ui_move_face_user)
+    SK.ui_window_begin("FPS", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_body, SK.ui_move_face_user)
     fps = round(rs.fps; digits=1)
-    SK.ui_text(transcode(Cchar, "$fps"), SK.text_align_center)
+    SK.ui_text("$fps", SK.text_align_center)
     SK.ui_window_end()
     pose = SK.matrix_trs(rs.helmet_pos, rs.helmet_ori, rs.helmet_scale)
     SK.model_draw(rs.helmet, pose, white, SK.render_layer_0)
@@ -83,8 +84,8 @@ function initsk()
 end
 
 function loadassets(rs::RenderState)
-    rs.ui_sprite = SK.sprite_create_file(u8"StereoKitWide.png", SK.sprite_type_single, u8"default")
-    rs.helmet = SK.model_create_file(u8"DamagedHelmet.gltf", SK.shader_t(C_NULL))
+    rs.ui_sprite = SK.sprite_create_file("StereoKitWide.png", SK.sprite_type_single, "default")
+    rs.helmet = SK.model_create_file("DamagedHelmet.gltf", SK.shader_t(C_NULL))
     return nothing
 end
 
