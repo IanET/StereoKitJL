@@ -7,7 +7,8 @@ Base.transcode(::Type{char16_t}, s::String) = reinterpret(char16_t, transcode(UI
 macro u8_str(s) transcode(Cchar, s) end
 macro u16_str(s) transcode(char16_t, s) end
 
-const window_pose = SK.pose_t(vec3(0.25, 0.28, -0.25), SK.quat_lookat(Ref(vec3(0, 0, -0.25)), Ref(vec3(0, 0.1, 0))))
+# const window_pose = SK.pose_t(vec3(0.25, 0.28, -0.25), SK.quat_lookat(Ref(vec3(0, 0, -0.25)), Ref(vec3(0, 0.1, 0))))
+const window_pose = SK.pose_t(vec3(0.25, 0.28, -0.25), SK.quat_lookat(Ref(vec3(0.25, 0.28, -0.25)), Ref(vec3(0, 0, 0))))
 const appname = u8"Project"
 const asset_folder = u8"assets"
 const white = color128(1, 1, 1, 1)
