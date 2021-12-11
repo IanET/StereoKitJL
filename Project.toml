@@ -1,2 +1,3 @@
 [deps]
+IMisc = "137d3b1c-0fe2-4079-81ca-d2a666b9416a"
 LibStereoKit = "3c372614-ce37-4749-ae5f-a6d0327edbc0"
