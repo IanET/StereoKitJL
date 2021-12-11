@@ -1,14 +1,13 @@
 import LibStereoKit as SK
 import Base.@kwdef
 import LibStereoKit: vec2, vec3, quat, color128, char16_t # Base SK types
+using Printf
 
 Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
 Base.transcode(::Type{char16_t}, s::String) = reinterpret(char16_t, transcode(UInt8, s))
 macro u8_str(s) transcode(Cchar, s) end
 macro u16_str(s) transcode(char16_t, s) end
 
-# const window_pose = SK.pose_t(vec3(0.25, 0.28, -0.25), SK.quat_lookat(Ref(vec3(0, 0, -0.25)), Ref(vec3(0, 0.1, 0))))
-const window_pose = SK.pose_t(vec3(0.25, 0.28, -0.25), SK.quat_lookat(Ref(vec3(0.25, 0.28, -0.25)), Ref(vec3(0, 0, 0))))
 const appname = u8"Project"
 const asset_folder = u8"assets"
 const white = color128(1, 1, 1, 1)
@@ -43,6 +42,9 @@ function updatefps(rs::RenderState)
 end
 
 function render(rs::RenderState) 
+    head_pose = SK.input_head() |> unsafe_load
+    window_pos = vec3(0, 0, -0.25)
+    window_pose = SK.pose_t(window_pos, SK.quat_lookat(Ref(window_pos), Ref(head_pose.position)))
     SK.ui_window_begin(u8"FPS", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_body, SK.ui_move_face_user)
     fps = round(rs.fps; digits=1)
     SK.ui_text(transcode(Cchar, "$fps"), SK.text_align_center)
