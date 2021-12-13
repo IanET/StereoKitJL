@@ -6,7 +6,7 @@ Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s
 macro u8_str(s) transcode(Cchar, s) end
 macro u16_str(s) transcode(char16_t, s) end
 
-# NB Keep as global const so they don't get GC'd
+# NB Keep as global const so they don't get GC'd (unsafe ptr below)
 const appname = u8"Project"
 const asset_folder = u8"assets"
 
@@ -42,11 +42,11 @@ end
 
 function render(rs::RenderState)::Void 
     head_pose = SK.input_head() |> unsafe_load
-    window_pos = vec3(0, 0, -0.25)
+    window_pos = vec3(0.1, 0.2, -0.2)
     window_pose = SK.pose_t(window_pos, SK.quat_lookat(Ref(window_pos), Ref(head_pose.position)))
-    SK.ui_window_begin("FPS", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_body, SK.ui_move_face_user)
+    SK.ui_window_begin("Information", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
     fps = round(rs.fps; digits=1)
-    SK.ui_text("$fps", SK.text_align_center)
+    SK.ui_text("FPS: $fps", SK.text_align_center_left)
     SK.ui_window_end()
     pose = SK.matrix_trs(rs.helmet_pos, rs.helmet_ori, rs.helmet_scale)
     SK.model_draw(rs.helmet, pose, white, SK.render_layer_0)
@@ -59,7 +59,7 @@ const render_grs_c = @cfunction(render_grs, Void, ())
 
 sleep_optional(t) = t > 0 ? sleep(t) : nothing
 
-function renderloop(render_rs_c, sleeptime)::Void
+function renderloop(render_rs_c, sleeptime = 0)::Void
     while SK.sk_step(render_rs_c) > 0
         sleep_optional(sleeptime)
     end
@@ -87,9 +87,16 @@ function main(rs::RenderState)::Void
     initsk()
     loadassets(rs)
 
-    renderloop(render_grs_c, isinteractive() ? 0.1 : 0.0)
+    if isinteractive()
+        @async begin 
+            renderloop(render_grs_c, 0.01)
+            SK.sk_shutdown()
+        end
+    else
+        renderloop(render_grs_c)
+        SK.sk_shutdown()
+    end
 
-    SK.sk_shutdown()
 end
 
 main(grs)

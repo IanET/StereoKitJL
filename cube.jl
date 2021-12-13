@@ -4,8 +4,9 @@ import Base.@kwdef
 # Base SK types
 import LibStereoKit: vec2, vec3, quat, color128, char16_t
 
-macro u8_str(s) reinterpret(Cchar, transcode(UInt8, s)) end
-macro u16_str(s) reinterpret(char16_t, transcode(UInt16, s)) end
+Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
+macro u8_str(s) transcode(Cchar, s) end
+macro u16_str(s) transcode(char16_t, s) end
 
 const appname = u8"Project"
 const asset_folder = u8"assets"
@@ -21,8 +22,8 @@ const quat_identity = SK.quat(0, 0, 0, 1)
     floor_material = C_NULL
 end
 
-const rs = RenderState()
-const render_rs() = render(rs)
+const grs = RenderState()
+const render_rs() = render(grs)
 const render_rs_c = @cfunction(render_rs, Nothing, ())
 
 function render(rs::RenderState) 
@@ -51,13 +52,13 @@ function main(rs::RenderState)
         SK.sk_init(settings) 
     end
 
-    material = SK.material_find(u8"default/material")
+    material = SK.material_find("default/material")
     mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
     rs.cube_model = SK.model_create_mesh(mesh, material)
 
-    rs.floor_mesh = SK.mesh_find(u8"default/mesh_cube")
+    rs.floor_mesh = SK.mesh_find("default/mesh_cube")
     rs.floor_transform = SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30)))
-    rs.floor_material = SK.shader_create_file(u8"floor.hlsl") |> SK.material_create
+    rs.floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
     SK.material_set_transparency(rs.floor_material, SK.transparency_blend)
 
     while SK.sk_step(render_rs_c) > 0 end
@@ -65,5 +66,5 @@ function main(rs::RenderState)
     SK.sk_shutdown()
 end
 
-main(rs)
+main(grs)
 
