@@ -22,15 +22,16 @@ const vec3_zero = vec3(0,0,0)
 const helmet_pos = vec3(-0.25, 0, -0.5)
 const helmet_ori = SK.quat_from_angles(20, 170, 0)
 const helmet_scale = vec3(0.2, 0.2, 0.2)
+const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
 
 Base.:(*)(l::vec3, r::vec3)::vec3 = vec3(l.x*r.x, l.y*r.y, l.z*r.z)
 
 @kwdef mutable struct RenderState 
-    floor_transform::Ref{SK.matrix} = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
     floor_model::SK.model_t = C_NULL
     helmet_model::SK.model_t = SK.model_t(C_NULL)
     helmet_pose::Ref{SK.pose_t} = Ref(SK.pose_t(helmet_pos, helmet_ori))
     helmet_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
+    window_pos = vec3(0.1, 0.2, -0.2)
     framecount::Int = 0
     frametime::Float64 = 0
     fps::Float32 = 0
@@ -47,14 +48,16 @@ function updatefps(rs::RenderState)::Void
 end
 
 function render(rs::RenderState)::Void 
-    SK.render_add_model(rs.floor_model, rs.floor_transform, white, SK.render_layer_0)
+    SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
+    
     head_pose = SK.input_head() |> unsafe_load
-    window_pos = vec3(0.1, 0.2, -0.2)
-    window_pose = SK.pose_t(window_pos, SK.quat_lookat(Ref(window_pos), Ref(head_pose.position)))
-    SK.ui_window_begin("Information", Ref(window_pose), vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
+    window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
+    SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
     fps = round(rs.fps; digits=1)
     SK.ui_text("FPS: $fps", SK.text_align_center_left)
     SK.ui_window_end()
+    rs.window_pos = window_pose[].position
+
     SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
     SK.ui_handle_end()
     m = SK.matrix_trs(
@@ -77,14 +80,15 @@ function renderloop(render_rs_c)::Void
     else
         while SK.sk_step(render_rs_c) > 0 end
     end
+    SK.sk_shutdown()
 end
 
 function initsk()::Void
     settings = SK.sk_settings_t(
         pointer(appname),
         pointer(asset_folder),
-        SK.display_mode_mixedreality,
-        # SK.display_mode_flatscreen,
+        # SK.display_mode_mixedreality,
+        SK.display_mode_flatscreen,
         SK.display_blend_any_transparent,
         0,
         SK.depth_mode_balanced,
@@ -109,13 +113,9 @@ function main(rs::RenderState)::Void
     loadassets(rs)
 
     if isinteractive()
-        @async begin 
-            renderloop(render_grs_c)
-            SK.sk_shutdown()
-        end
+        @async renderloop(render_grs_c)
     else
         renderloop(render_grs_c)
-        SK.sk_shutdown()
     end
 
 end
