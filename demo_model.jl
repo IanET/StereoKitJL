@@ -69,11 +69,13 @@ const grs = RenderState()
 const render_grs() = render(grs)
 const render_grs_c = @cfunction(render_grs, Void, ())
 
-sleep_optional(t) = t > 0 ? sleep(t) : nothing
-
-function renderloop(render_rs_c, sleeptime = 0)::Void
-    while SK.sk_step(render_rs_c) > 0
-        sleep_optional(sleeptime)
+function renderloop(render_rs_c)::Void
+    if isinteractive()
+        while SK.sk_step(render_rs_c) > 0
+            sleep(0.01)
+        end
+    else
+        while SK.sk_step(render_rs_c) > 0 end
     end
 end
 
@@ -108,14 +110,14 @@ function main(rs::RenderState)::Void
 
     if isinteractive()
         @async begin 
-            renderloop(render_grs_c, 0.01)
+            renderloop(render_grs_c)
             SK.sk_shutdown()
         end
     else
         renderloop(render_grs_c)
         SK.sk_shutdown()
     end
-    
+
 end
 
 main(grs)
