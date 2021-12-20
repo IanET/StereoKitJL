@@ -56,7 +56,7 @@ function main(rs::RenderState)
     settings = SK.sk_settings_t(
         pointer(appname),
         pointer(asset_folder),
-        SK.display_mode_flatscreen,
+        SK.display_mode_mixedreality,
         SK.display_blend_any_transparent,
         0,
         SK.depth_mode_balanced,
