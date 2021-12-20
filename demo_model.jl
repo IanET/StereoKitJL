@@ -17,14 +17,20 @@ const cm2m = 0.01f0
 const mm2m = 0.001f0
 const rval = Ref(0.5f0)
 const rval2 = Ref(0.5f0)
+const vec3_zero = vec3(0,0,0)
+
+const helmet_pos = vec3(-0.25, 0, -0.5)
+const helmet_ori = SK.quat_from_angles(20, 170, 0)
+const helmet_scale = vec3(0.2, 0.2, 0.2)
+
+Base.:(*)(l::vec3, r::vec3)::vec3 = vec3(l.x*r.x, l.y*r.y, l.z*r.z)
 
 @kwdef mutable struct RenderState 
-    ui_sprite::SK.sprite_t = SK.sprite_t(C_NULL)
-    buffer::Vector{Cchar} = zeros(Cchar, 128)
-    helmet::SK.model_t = SK.model_t(C_NULL)
-    helmet_pos::Ref{vec3} = Ref(vec3(-0.25, 0, -0.5))
-    helmet_ori::Ref{quat} = Ref(SK.quat_from_angles(20, 170, 0))
-    helmet_scale::Ref{vec3} = Ref(vec3(0.2, 0.2, 0.2))
+    floor_transform::Ref{SK.matrix} = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
+    floor_model::SK.model_t = C_NULL
+    helmet_model::SK.model_t = SK.model_t(C_NULL)
+    helmet_pose::Ref{SK.pose_t} = Ref(SK.pose_t(helmet_pos, helmet_ori))
+    helmet_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
     framecount::Int = 0
     frametime::Float64 = 0
     fps::Float32 = 0
@@ -41,6 +47,7 @@ function updatefps(rs::RenderState)::Void
 end
 
 function render(rs::RenderState)::Void 
+    SK.render_add_model(rs.floor_model, rs.floor_transform, white, SK.render_layer_0)
     head_pose = SK.input_head() |> unsafe_load
     window_pos = vec3(0.1, 0.2, -0.2)
     window_pose = SK.pose_t(window_pos, SK.quat_lookat(Ref(window_pos), Ref(head_pose.position)))
@@ -48,8 +55,13 @@ function render(rs::RenderState)::Void
     fps = round(rs.fps; digits=1)
     SK.ui_text("FPS: $fps", SK.text_align_center_left)
     SK.ui_window_end()
-    pose = SK.matrix_trs(rs.helmet_pos, rs.helmet_ori, rs.helmet_scale)
-    SK.model_draw(rs.helmet, pose, white, SK.render_layer_0)
+    SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
+    SK.ui_handle_end()
+    m = SK.matrix_trs(
+        Ref(rs.helmet_pose[].position), 
+        Ref(rs.helmet_pose[].orientation), 
+        Ref(helmet_scale))
+    SK.model_draw(rs.helmet_model, m, white, SK.render_layer_0)
     updatefps(rs)
 end
 
@@ -69,7 +81,8 @@ function initsk()::Void
     settings = SK.sk_settings_t(
         pointer(appname),
         pointer(asset_folder),
-        SK.display_mode_flatscreen,
+        SK.display_mode_mixedreality,
+        # SK.display_mode_flatscreen,
         SK.display_blend_any_transparent,
         0,
         SK.depth_mode_balanced,
@@ -79,8 +92,14 @@ function initsk()::Void
 end
 
 function loadassets(rs::RenderState)::Void
-    rs.ui_sprite = SK.sprite_create_file("StereoKitWide.png", SK.sprite_type_single, "default")
-    rs.helmet = SK.model_create_file("DamagedHelmet.gltf", SK.shader_t(C_NULL))
+    rs.helmet_model = SK.model_create_file("DamagedHelmet.gltf", SK.shader_t(C_NULL))
+    bounds = SK.model_get_bounds(rs.helmet_model)
+    rs.helmet_bounds = SK.bounds_t(bounds.center, bounds.dimensions * helmet_scale)
+
+    floor_mesh = SK.mesh_find("default/mesh_cube")
+    floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
+    SK.material_set_transparency(floor_material, SK.transparency_blend)
+    rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
 end
 
 function main(rs::RenderState)::Void
@@ -96,7 +115,7 @@ function main(rs::RenderState)::Void
         renderloop(render_grs_c)
         SK.sk_shutdown()
     end
-
+    
 end
 
 main(grs)
