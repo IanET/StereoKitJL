@@ -6,7 +6,7 @@ uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 version = "0.4.1"
 
 [[IMisc]]
-git-tree-sha1 = "0ebac8ff92604c6faa315fccde26f47872a1481c"
+git-tree-sha1 = "5be4f413767b6543dd0ddc4bd647957f7e44f46c"
 repo-rev = "main"
 repo-url = "https://github.com/IanET/IMiscJL.git"
 uuid = "137d3b1c-0fe2-4079-81ca-d2a666b9416a"
@@ -14,7 +14,7 @@ version = "0.1.0"
 
 [[LibStereoKit]]
 deps = ["CEnum"]
-git-tree-sha1 = "d5254016703a62a62e76eef9d1c5e328b9106c89"
+git-tree-sha1 = "dcab1202200763013ca11b5026b4fb46383f5276"
 repo-rev = "main"
 repo-url = "https://github.com/IanET/LibStereoKit.git"
 uuid = "3c372614-ce37-4749-ae5f-a6d0327edbc0"
