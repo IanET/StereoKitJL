@@ -47,25 +47,31 @@ function updatefps(rs::RenderState)::Void
     end
 end
 
+# TODO - fix ref allocs (21, 928 bytes) 
 function render(rs::RenderState)::Void 
-    SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
-    
-    head_pose = SK.input_head() |> unsafe_load
-    window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
-    SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
-    fps = round(rs.fps; digits=1)
-    SK.ui_text("FPS: $fps", SK.text_align_center_left)
-    SK.ui_window_end()
-    rs.window_pos = window_pose[].position
+    try
+        SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
+        
+        head_pose = SK.input_head() |> unsafe_load
+        window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
+        SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
+        fps = round(rs.fps; digits=1)
+        SK.ui_text("FPS: $fps", SK.text_align_center_left)
+        SK.ui_window_end()
+        rs.window_pos = window_pose[].position
 
-    SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
-    SK.ui_handle_end()
-    m = SK.matrix_trs(
-        Ref(rs.helmet_pose[].position), 
-        Ref(rs.helmet_pose[].orientation), 
-        Ref(helmet_scale))
-    SK.model_draw(rs.helmet_model, m, white, SK.render_layer_0)
-    updatefps(rs)
+        SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
+        SK.ui_handle_end()
+        m = SK.matrix_trs(
+            Ref(rs.helmet_pose[].position), 
+            Ref(rs.helmet_pose[].orientation), 
+            Ref(helmet_scale))
+        SK.model_draw(rs.helmet_model, m, white, SK.render_layer_0)
+        updatefps(rs)
+    catch e
+        println("Exception: $e")
+        sleep(0.5)
+    end
 end
 
 const grs = RenderState()
