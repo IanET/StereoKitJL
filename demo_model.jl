@@ -64,6 +64,7 @@ end
 # --- App ---
 const white = color128(1, 1, 1, 1)
 const black = color128(0, 0, 0, 1)
+const gray = color128(0.5, 0.5, 0.5, 1)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
 
@@ -123,7 +124,7 @@ function render(rs::RenderState)::Void
         SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
         SK.ui_handle_end()
         m = SK.matrix_trs( Ref(rs.helmet_pose[].position), Ref(rs.helmet_pose[].orientation), Ref(helmet_scale))
-        SK.model_draw(rs.helmet_model, m, black, SK.render_layer_0)
+        SK.model_draw(rs.helmet_model, m, white, SK.render_layer_0)
 
         updatefps(rs.stats)
     catch e
