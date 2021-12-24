@@ -123,7 +123,7 @@ function render(rs::RenderState)::Void
         SK.ui_handle_begin("helmet", rs.helmet_pose, rs.helmet_bounds, 0, SK.ui_move_exact)
         SK.ui_handle_end()
         m = SK.matrix_trs( Ref(rs.helmet_pose[].position), Ref(rs.helmet_pose[].orientation), Ref(helmet_scale))
-        SK.model_draw(rs.helmet_model, m, white, SK.render_layer_0)
+        SK.model_draw(rs.helmet_model, m, black, SK.render_layer_0)
 
         updatefps(rs.stats)
     catch e
@@ -149,12 +149,11 @@ function main()::Void
     rs = RenderState()
     loadassets(rs)
 
-    task = @task begin 
+    task = @async begin 
         sk_renderloop(() -> render(rs))
-        # TODO cleanup
+        # TODO cleanup assets
         SK.sk_shutdown()
     end
-    schedule(task)
 
     if !isinteractive() wait(task) end
 end
