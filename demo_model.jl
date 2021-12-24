@@ -145,18 +145,19 @@ function loadassets(rs::RenderState)::Void
     rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
 end
 
+async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
+
 function main()::Void
     sk_init(app_name = "Test App", assets_folder = "assets")
     rs = RenderState()
     loadassets(rs)
 
-    task = @async begin 
+    async(isinteractive()) do
         sk_renderloop(() -> render(rs))
         # TODO cleanup assets
         SK.sk_shutdown()
     end
-
-    if !isinteractive() wait(task) end
+    
 end
 
 main();
