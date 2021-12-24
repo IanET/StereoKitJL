@@ -156,9 +156,9 @@ function main()::Void
         sk_renderloop(() -> render(rs))
         # TODO cleanup assets
         SK.sk_shutdown()
-    end 
+    end
+    
     non_interactive_wait(task)
-
 end
 
 main();
