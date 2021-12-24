@@ -157,7 +157,7 @@ function main()::Void
         # TODO cleanup assets
         SK.sk_shutdown()
     end
-
+    
 end
 
 main();
