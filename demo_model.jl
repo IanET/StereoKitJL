@@ -117,7 +117,7 @@ function render(rs::RenderState)::Void
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
         fps = round(rs.stats.fps; digits=1)
         SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
-        SK.ui_text("FPS: $fps \nAllocs: $(rs.stats.allocs) \nBytes: $(rs.stats.bytes) \nGC: $(rs.stats.gctime)ms", SK.text_align_center_left)
+        SK.ui_text("FPS:      $fps \nAllocs:  $(rs.stats.allocs) \nBytes:   $(rs.stats.bytes) \nGC:       $(rs.stats.gctime)ms", SK.text_align_center_left)
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
