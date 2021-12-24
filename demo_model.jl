@@ -22,7 +22,6 @@ function sk_renderloop(render::Function)::Void
     else
         while SK.sk_step(render_wrapper_c) > 0 end
     end
-    SK.sk_shutdown()
 end
 
 function sk_init(;
@@ -150,12 +149,14 @@ function main()::Void
     rs = RenderState()
     loadassets(rs)
 
-    if isinteractive()
-        @async sk_renderloop(() -> render(rs))
-    else
+    task = @task begin 
         sk_renderloop(() -> render(rs))
+        # TODO cleanup
+        SK.sk_shutdown()
     end
+    schedule(task)
 
+    if !isinteractive() wait(task) end
 end
 
 main()
