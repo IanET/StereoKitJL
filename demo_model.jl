@@ -158,4 +158,4 @@ function main()::Void
     if !isinteractive() wait(task) end
 end
 
-main()
+main();
