@@ -152,9 +152,10 @@ function main()::Void
     rs = RenderState()
     loadassets(rs)
 
+    # Async if in vscode, sync otherwise
     async(isinteractive()) do
         sk_renderloop(() -> render(rs))
-        # TODO cleanup assets
+        # ... cleanup assets ...
         SK.sk_shutdown()
     end
     
