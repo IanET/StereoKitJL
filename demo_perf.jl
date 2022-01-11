@@ -10,7 +10,8 @@ const cm2m = 0.01f0
 const mm2m = 0.001f0
 const vec3_zero = vec3(0,0,0)
 
-Base.:(*)(l::vec3, r::vec3)::vec3 = vec3(l.x*r.x, l.y*r.y, l.z*r.z)
+Base.:(*)(a::vec3, b::vec3)::vec3 = vec3(a.x*b.x, a.y*b.y, a.z*b.z)
+Base.:(+)(a::vec3, b::vec3)::vec3 = vec3(a.x+b.x, a.y+b.y, a.z+b.z)
 
 function sk_renderloop(render::Function)::Void
     render_wrapper() = try render() catch end # Eat exceptions
@@ -68,9 +69,9 @@ const gray = color128(0.5, 0.5, 0.5, 1)
 const transparent_black = color128(0, 0, 0, 0)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
-const obj_pos = vec3(-0.25, 0, -0.5)
-const obj_ori = SK.quat_from_angles(22, 90, 22)
-const obj_scale = vec3(0.5, 0.5, 0.5)
+const OBJ_POS = vec3(-0.25, 0, -0.5)
+const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
+const OBJ_SCALE = vec3(0.25, 0.25, 0.35)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
 
 @kwdef mutable struct FrameStats
@@ -86,9 +87,10 @@ end
 @kwdef mutable struct RenderState 
     floor_model::SK.model_t = C_NULL
     obj_model::SK.model_t = SK.model_t(C_NULL)
-    obj_pose::Ref{SK.pose_t} = Ref(SK.pose_t(obj_pos, obj_ori))
+    # obj_pose::Ref{SK.pose_t} = Ref(SK.pose_t(OBJ_POS, OBJ_ORI))
     obj_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
     window_pos::vec3 = vec3(0.1, 0.2, -0.2)
+    obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
 end
 
@@ -109,22 +111,33 @@ function updatetime(fs::FrameStats, stats)::Void
     fs.gctime = stats.gctime
 end
 
+# Positions for a bunch of object instances
+const X_RANGE = -0.5:0.2:0.5
+const Y_RANGE = -0.5:0.2:0.5
+const Z_RANGE = -1:0.2:-0.5
+
+col_from_pos(x,y,z) = color128(x-X_RANGE[begin], y-Y_RANGE[begin], z-Z_RANGE[begin], 1.0)
+
 function render(rs::RenderState)::Void 
-    stats = @timed try
+    stats = @timed try 
         SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
         
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
         fps = round(rs.stats.fps; digits=1)
         SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
-        SK.ui_text("FPS:      $fps \nAllocs:  $(rs.stats.allocs) \nBytes:   $(rs.stats.bytes) \nGC:       $(rs.stats.gctime)ms", SK.text_align_center_left)
+        SK.ui_text("FPS:      $fps \nAllocs:  $(rs.stats.allocs) \nBytes:   $(rs.stats.bytes) \nGC:       $(rs.stats.gctime)ms", SK.text_align_center_left) # 14 allocs
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
-        SK.ui_handle_begin("model", rs.obj_pose, rs.obj_bounds, 0, SK.ui_move_exact)
-        SK.ui_handle_end()
-        m = SK.matrix_trs(Ref(rs.obj_pose[].position), Ref(rs.obj_pose[].orientation), Ref(obj_scale))
-        SK.model_draw(rs.obj_model, m, white, SK.render_layer_0)
+        rs.obj_ang += 0.05
+        if (rs.obj_ang > 360) rs.obj_ang = 0 end
+        ori = SK.quat_from_angles(22, rs.obj_ang, 22)
+
+        for x in X_RANGE, y in Y_RANGE, z in Z_RANGE
+            m = SK.matrix_trs(Ref(vec3(x, y, z)), Ref(ori), Ref(OBJ_SCALE))
+            SK.model_draw(rs.obj_model, m, col_from_pos(x, y, z), SK.render_layer_0)
+        end
 
         updatefps(rs.stats)
     catch e
@@ -142,8 +155,7 @@ function loadassets(rs::RenderState)::Void
     
     rs.obj_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
     bounds = SK.model_get_bounds(rs.obj_model)
-    rs.obj_bounds = SK.bounds_t(bounds.center, bounds.dimensions * obj_scale)
-    # @show bounds
+    rs.obj_bounds = SK.bounds_t(bounds.center, bounds.dimensions * OBJ_SCALE)
 end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
@@ -158,4 +170,3 @@ async(isinteractive()) do
     # ... cleanup assets ...
     SK.sk_shutdown()
 end
-    
