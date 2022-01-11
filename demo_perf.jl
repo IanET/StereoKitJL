@@ -68,9 +68,9 @@ const gray = color128(0.5, 0.5, 0.5, 1)
 const transparent_black = color128(0, 0, 0, 0)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
-const model_pos = vec3(-0.25, 0, -0.5)
-const model_ori = SK.quat_from_angles(22, 90, 22)
-const model_scale = vec3(0.5, 0.5, 0.5)
+const obj_pos = vec3(-0.25, 0, -0.5)
+const obj_ori = SK.quat_from_angles(22, 90, 22)
+const obj_scale = vec3(0.5, 0.5, 0.5)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
 
 @kwdef mutable struct FrameStats
@@ -85,9 +85,9 @@ end
 
 @kwdef mutable struct RenderState 
     floor_model::SK.model_t = C_NULL
-    model_model::SK.model_t = SK.model_t(C_NULL)
-    model_pose::Ref{SK.pose_t} = Ref(SK.pose_t(model_pos, model_ori))
-    model_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
+    obj_model::SK.model_t = SK.model_t(C_NULL)
+    obj_pose::Ref{SK.pose_t} = Ref(SK.pose_t(obj_pos, obj_ori))
+    obj_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
     window_pos::vec3 = vec3(0.1, 0.2, -0.2)
     stats::FrameStats = FrameStats()
 end
@@ -121,10 +121,10 @@ function render(rs::RenderState)::Void
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
-        SK.ui_handle_begin("model", rs.model_pose, rs.model_bounds, 0, SK.ui_move_exact)
+        SK.ui_handle_begin("model", rs.obj_pose, rs.obj_bounds, 0, SK.ui_move_exact)
         SK.ui_handle_end()
-        m = SK.matrix_trs(Ref(rs.model_pose[].position), Ref(rs.model_pose[].orientation), Ref(model_scale))
-        SK.model_draw(rs.model_model, m, white, SK.render_layer_0)
+        m = SK.matrix_trs(Ref(rs.obj_pose[].position), Ref(rs.obj_pose[].orientation), Ref(obj_scale))
+        SK.model_draw(rs.obj_model, m, white, SK.render_layer_0)
 
         updatefps(rs.stats)
     catch e
@@ -140,9 +140,9 @@ function loadassets(rs::RenderState)::Void
     SK.material_set_transparency(floor_material, SK.transparency_blend)
     rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
     
-    rs.model_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
-    bounds = SK.model_get_bounds(rs.model_model)
-    rs.model_bounds = SK.bounds_t(bounds.center, bounds.dimensions * model_scale)
+    rs.obj_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
+    bounds = SK.model_get_bounds(rs.obj_model)
+    rs.obj_bounds = SK.bounds_t(bounds.center, bounds.dimensions * obj_scale)
     # @show bounds
 end
 
