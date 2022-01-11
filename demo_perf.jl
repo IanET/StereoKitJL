@@ -70,8 +70,7 @@ const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
 const model_pos = vec3(-0.25, 0, -0.5)
 const model_ori = SK.quat_from_angles(22, 90, 22)
-# const model_scale = vec3(0.005, 0.005, 0.005)
-const model_scale = vec3(1, 1, 1)
+const model_scale = vec3(0.5, 0.5, 0.5)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
 
 @kwdef mutable struct FrameStats
@@ -140,30 +139,8 @@ function loadassets(rs::RenderState)::Void
     floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
     SK.material_set_transparency(floor_material, SK.transparency_blend)
     rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
-
-    # model_shader = SK.shader_create_file("floor.hlsl")
-    # rs.model_model = SK.model_create_file("SpaceShuttle.glb", model_shader)
-
-    # matPBR = Default.MaterialPBR.Copy();
-    # matPBR[MatParamName.DiffuseTex  ] = Tex.FromFile("metal_plate_diff.jpg");
-    # matPBR[MatParamName.MetalTex    ] = Tex.FromFile("metal_plate_metal.jpg", false);
-    # matPBR[MatParamName.OcclusionTex] = Tex.FromFile("metal_plate_metal.jpg", false);
-    texdiff = SK.tex_create_file("metal_plate_diff.jpg", true)
-    texmet = SK.tex_create_file("metal_plate_metal.jpg", false)
-    texocc = SK.tex_create_file("metal_plate_metal.jpg", false)
-    shader = SK.shader_find("default/shader_pbr")
-    mat = SK.material_create(shader)
-    SK.material_set_texture(mat, "diffuse", texdiff)
-    SK.material_set_texture(mat, "metallic", texmet)
-    SK.material_set_texture(mat, "occlusion", texocc)
-    mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
-    rs.model_model = SK.model_create_mesh(mesh, mat)
     
-    # rs.model_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
-    # rs.model_model = SK.model_create_file("MarsCuriosityRover.glb", SK.shader_t(C_NULL))
-    # rs.model_model = SK.model_create_file("DamagedHelmet.gltf", SK.shader_t(C_NULL))
-    # rs.model_model = SK.model_create_file("Cosmonaut.glb", SK.shader_t(C_NULL))
-
+    rs.model_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
     bounds = SK.model_get_bounds(rs.model_model)
     rs.model_bounds = SK.bounds_t(bounds.center, bounds.dimensions * model_scale)
     # @show bounds
