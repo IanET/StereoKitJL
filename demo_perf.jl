@@ -87,8 +87,6 @@ end
 @kwdef mutable struct RenderState 
     floor_model::SK.model_t = C_NULL
     obj_model::SK.model_t = SK.model_t(C_NULL)
-    # obj_pose::Ref{SK.pose_t} = Ref(SK.pose_t(OBJ_POS, OBJ_ORI))
-    obj_bounds::SK.bounds_t = SK.bounds_t(vec3_zero, vec3_zero)
     window_pos::vec3 = vec3(0.1, 0.2, -0.2)
     obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
@@ -154,8 +152,6 @@ function loadassets(rs::RenderState)::Void
     rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
     
     rs.obj_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
-    bounds = SK.model_get_bounds(rs.obj_model)
-    rs.obj_bounds = SK.bounds_t(bounds.center, bounds.dimensions * OBJ_SCALE)
 end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
