@@ -3,6 +3,7 @@ import LibStereoKit: vec2, vec3, quat, color128, char16_t, bool32_t # Base SK ty
 using Printf, IMisc
 
 # --- Helpers ---
+
 Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
 macro u8_str(s) transcode(Cchar, s) end
 macro u16_str(s) transcode(char16_t, s) end
@@ -63,6 +64,7 @@ function sk_init(;
 end
 
 # --- App ---
+
 const white = color128(1, 1, 1, 1)
 const black = color128(0, 0, 0, 1)
 const gray = color128(0.5, 0.5, 0.5, 1)
@@ -112,7 +114,7 @@ end
 # Positions for a bunch of object instances
 const X_RANGE = -0.5:0.2:0.5
 const Y_RANGE = -0.5:0.2:0.5
-const Z_RANGE = -1:0.2:-0.5
+const Z_RANGE = -1.5:0.2:-0.5
 
 col_from_pos(x,y,z) = color128(x-X_RANGE[begin], y-Y_RANGE[begin], z-Z_RANGE[begin], 1.0)
 
