@@ -158,6 +158,8 @@ end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
+# --- Main --- 
+
 sk_init(app_name = "Test App", assets_folder = "assets")
 rs = RenderState()
 loadassets(rs)
@@ -168,3 +170,4 @@ async(isinteractive()) do
     # ... cleanup assets ...
     SK.sk_shutdown()
 end
+
