@@ -113,8 +113,8 @@ end
 
 # Positions for a bunch of object instances
 const X_RANGE = -0.5:0.2:0.5
-const Y_RANGE = -0.5:0.2:0.5
-const Z_RANGE = -1.5:0.2:-0.5
+const Y_RANGE = -0.75:0.2:0.25
+const Z_RANGE = -2.5:0.2:-1.0
 
 col_from_pos(x,y,z) = color128(x-X_RANGE[begin], y-Y_RANGE[begin], z-Z_RANGE[begin], 1.0)
 
