@@ -18,11 +18,9 @@ function sk_renderloop(render::Function)::Void
     render_wrapper() = try render() catch end # Eat exceptions
     render_wrapper_c = @cfunction($render_wrapper, Void, ()) # Not supported on all cpu architectures
     if isinteractive()
-        while SK.sk_step(render_wrapper_c) > 0
-            sleep(0.01)
-        end
+        while SK.sk_step(render_wrapper_c) > 0; sleep(0.01) end
     else
-        while SK.sk_step(render_wrapper_c) > 0 end
+        while SK.sk_step(render_wrapper_c) > 0; end
     end
 end
 
