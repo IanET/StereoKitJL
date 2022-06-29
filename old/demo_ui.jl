@@ -35,7 +35,7 @@ function render(rs::RenderState)
     SK.ui_window_begin("Main", Ref(window_pose), vec2(24cm2m, 24cm2m), SK.ui_win_normal, SK.ui_move_face_user)
     SK.ui_button("Testing!")
     SK.ui_sameline()
-    SK.ui_input("text", pointer(rs.buffer), sizeof(rs.buffer), vec2(16cm2m, SK.ui_line_height()))
+    SK.ui_input("text", pointer(rs.buffer), sizeof(rs.buffer), vec2(16cm2m, SK.ui_line_height()), SK.text_context_text)
     SK.ui_hslider("slider", rval, 0.0, 1.0, 0.2, 72mm2m, SK.ui_confirm_pinch)
     SK.ui_sameline()
     SK.ui_hslider("slider2", rval2, 0.0, 1.0, 0.0, 72mm2m, SK.ui_confirm_push)
@@ -61,7 +61,7 @@ function main(rs::RenderState)
         0,
         SK.depth_mode_balanced,
         SK.log_none,
-        0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
+        0, 0, 0, 0, 0, 0, 0, 0, C_NULL, C_NULL)
     SK.sk_init(settings) 
 
 	rs.ui_sprite = SK.sprite_create_file("StereoKitWide.png", SK.sprite_type_single, "default")

@@ -13,9 +13,9 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.CEnum]]
-git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
+git-tree-sha1 = "eb4cb44a499229b3b8426dcfb5dd85333951ff90"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
-version = "0.4.1"
+version = "0.4.2"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -54,11 +54,11 @@ uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
 
 [[deps.LibStereoKit]]
 deps = ["CEnum", "Pkg"]
-git-tree-sha1 = "2a8ca8af86c11242d870386668b74ea5565364f9"
-repo-rev = "main"
+git-tree-sha1 = "b0bdb91bfd4e7721d70ba9b27951613b04db7f8d"
+repo-rev = "v0.3.6"
 repo-url = "https://github.com/IanET/LibStereoKit.git"
 uuid = "3c372614-ce37-4749-ae5f-a6d0327edbc0"
-version = "0.3.5"
+version = "0.3.6"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"

@@ -40,7 +40,8 @@ function sk_init(;
     flatscreen_pos_y::Int = 0, 
     flatscreen_width::Int = 0, 
     flatscreen_height::Int = 0, 
-    disable_flatscreen_mr_sim::Bool = false)
+    disable_flatscreen_mr_sim::Bool = false,
+    disable_unfocused_sleep::Bool = false)
 
     GC.@preserve app_name assets_folder begin 
         settings = SK.sk_settings_t(
@@ -58,7 +59,10 @@ function sk_init(;
             flatscreen_width |> Int32,
             flatscreen_height |> Int32,
             disable_flatscreen_mr_sim |> bool32_t,
-            C_NULL, C_NULL)
+            disable_unfocused_sleep |> bool32_t,
+            C_NULL, 
+            C_NULL
+        )
         SK.sk_init(settings)
     end
 end
