@@ -18,11 +18,9 @@ function sk_renderloop(render::Function)::Void
     render_wrapper() = try render() catch end # Eat exceptions
     render_wrapper_c = @cfunction($render_wrapper, Void, ()) # Not supported on all cpu architectures
     if isinteractive()
-        while SK.sk_step(render_wrapper_c) > 0
-            sleep(0.01)
-        end
+        while SK.sk_step(render_wrapper_c) > 0; sleep(0.01) end
     else
-        while SK.sk_step(render_wrapper_c) > 0 end
+        while SK.sk_step(render_wrapper_c) > 0; end
     end
 end
 
@@ -40,7 +38,8 @@ function sk_init(;
     flatscreen_pos_y::Int = 0, 
     flatscreen_width::Int = 0, 
     flatscreen_height::Int = 0, 
-    disable_flatscreen_mr_sim::Bool = false)
+    disable_flatscreen_mr_sim::Bool = false,
+    disable_unfocused_sleep::Bool = false)
 
     GC.@preserve app_name assets_folder begin 
         settings = SK.sk_settings_t(
@@ -58,7 +57,10 @@ function sk_init(;
             flatscreen_width |> Int32,
             flatscreen_height |> Int32,
             disable_flatscreen_mr_sim |> bool32_t,
-            C_NULL, C_NULL)
+            disable_unfocused_sleep |> bool32_t,
+            C_NULL, 
+            C_NULL
+        )
         SK.sk_init(settings)
     end
 end
