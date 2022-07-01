@@ -75,10 +75,8 @@ const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
 const OBJ_POS = vec3(-0.25, 0, -0.5)
 const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
-# const OBJ_SCALE = vec3(0.5, 0.5, 0.5)
 const OBJ_SCALE = vec3(1.0, 1.0, 1.0)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
-# Positions for a bunch of object instances
 const MODEL_X = 0
 const MODEL_Y = 0
 const MODEL_Z = -1.0
@@ -118,8 +116,6 @@ function updatetime(fs::FrameStats, stats)::Void
     fs.gctime = stats.gctime
 end
 
-# col_from_pos(x,y,z) = color128(x-X_RANGE[begin], y-Y_RANGE[begin], z-Z_RANGE[begin], 1.0)
-
 function render(rs::RenderState)::Void 
     stats = @timed try 
         SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
@@ -153,8 +149,6 @@ function loadassets(rs::RenderState)::Void
     SK.material_set_transparency(floor_material, SK.transparency_blend)
     rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
     
-    # rs.obj_model = SK.model_create_file("SpaceShuttle.glb", SK.shader_t(C_NULL))
-
     material = SK.material_find("default/material")
     mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
     rs.obj_model = SK.model_create_mesh(mesh, material)
