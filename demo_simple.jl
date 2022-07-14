@@ -75,11 +75,8 @@ const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
 const OBJ_POS = vec3(-0.25, 0, -0.5)
 const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
-const OBJ_SCALE = vec3(1.0, 1.0, 1.0)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
-const MODEL_X = 0
-const MODEL_Y = 0
-const MODEL_Z = -1.0
+
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
@@ -123,8 +120,17 @@ function render(rs::RenderState)::Void
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
         fps = round(rs.stats.fps; digits=1)
+        
         SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
-        SK.ui_text("FPS:      $fps \nAllocs:  $(rs.stats.allocs) \nBytes:   $(rs.stats.bytes) \nGC:       $(rs.stats.gctime)ms", SK.text_align_center_left) # 14 allocs
+        SK.ui_push_text_style
+        SK.ui_text(
+            """
+            FPS:      $fps                  
+            Allocs:  $(rs.stats.allocs)     
+            Bytes:   $(rs.stats.bytes)             
+            GC:       $(rs.stats.gctime)ms
+            """, 
+            SK.text_align_center_left) # 14 allocs
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
@@ -132,7 +138,7 @@ function render(rs::RenderState)::Void
         if (rs.obj_ang > 360) rs.obj_ang = 0 end
         ori = SK.quat_from_angles(22, rs.obj_ang, 22)
 
-        m = SK.matrix_trs(Ref(vec3(MODEL_X, MODEL_Y, MODEL_Z)), Ref(ori), Ref(OBJ_SCALE))
+        m = SK.matrix_trs(Ref(vec3(0, 0, -1.0)), Ref(ori), Ref(vec3(2.5, 2.5, 2.5)))
         SK.model_draw(rs.obj_model, m, color128(0.1, 0.1, 1.0, 1.0), SK.render_layer_0)
 
         updatefps(rs.stats)
@@ -150,7 +156,8 @@ function loadassets(rs::RenderState)::Void
     # rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
     
     material = SK.material_find("default/material")
-    mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
+    # mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
+    mesh = SK.mesh_gen_cube(vec3(0.25, 0.25, 0.25), 4)
     rs.obj_model = SK.model_create_mesh(mesh, material)
 
     SK.render_enable_skytex(false)
