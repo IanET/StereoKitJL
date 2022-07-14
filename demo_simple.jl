@@ -118,7 +118,7 @@ end
 
 function render(rs::RenderState)::Void 
     stats = @timed try 
-        SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
+        # SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
         
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
@@ -144,14 +144,18 @@ function render(rs::RenderState)::Void
 end
 
 function loadassets(rs::RenderState)::Void
-    floor_mesh = SK.mesh_find("default/mesh_cube")
-    floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
-    SK.material_set_transparency(floor_material, SK.transparency_blend)
-    rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
+    # floor_mesh = SK.mesh_find("default/mesh_cube")
+    # floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
+    # SK.material_set_transparency(floor_material, SK.transparency_blend)
+    # rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
     
     material = SK.material_find("default/material")
     mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
     rs.obj_model = SK.model_create_mesh(mesh, material)
+
+    SK.render_enable_skytex(false)
+    SK.input_hand_visible(SK.handed_left, false)
+    SK.input_hand_visible(SK.handed_right, false)
 end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
