@@ -86,6 +86,10 @@ const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identi
     bytes::Int64 = 0
     allocs::Int64 = 0
     gctime::Float64 = 0
+    avtimems::Int = 0
+    avbytes::Int = 0
+    avallocs::Int = 0
+    avgctimems::Int = 0
 end
 
 @kwdef mutable struct RenderState 
@@ -99,18 +103,24 @@ end
 function updatefps(fs::FrameStats)::Void
     fs.framecount += 1
     delta = time() - fs.frametime
-    if delta > 1.0
+    if delta >= 1.0
         fs.fps = fs.framecount / delta
-        fs.framecount = 0
+        
+        fs.avallocs = fs.allocs ÷ fs.framecount
+        fs.avbytes = fs.bytes ÷ fs.framecount
+        fs.avgctimems = fs.gctime * 1000 ÷ fs.framecount
+        fs.avtimems = fs.time * 1000 ÷ fs.framecount
+
+        fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
         fs.frametime = time()
     end
 end
 
 function updatetime(fs::FrameStats, stats)::Void
-    fs.time = stats.time
-    fs.bytes = stats.bytes
-    fs.allocs = stats.gcstats.poolalloc + stats.gcstats.malloc + stats.gcstats.realloc + stats.gcstats.bigalloc
-    fs.gctime = stats.gctime
+    fs.time += stats.time
+    fs.bytes += stats.bytes
+    fs.allocs += stats.gcstats.poolalloc + stats.gcstats.malloc + stats.gcstats.realloc + stats.gcstats.bigalloc
+    fs.gctime += stats.gctime
 end
 
 function render(rs::RenderState)::Void 
@@ -119,16 +129,18 @@ function render(rs::RenderState)::Void
         
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
-        fps = round(rs.stats.fps; digits=1)
         
-        SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
+        # Per sec avg
+        fps = round(rs.stats.fps; digits=1)
+        SK.ui_window_begin("--- Information ---", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
         SK.ui_push_text_style
         SK.ui_text(
             """
-            FPS:      $fps                  
-            Allocs:  $(rs.stats.allocs)     
-            Bytes:   $(rs.stats.bytes)             
-            GC:       $(rs.stats.gctime)ms
+            FPS:         $fps
+            Render:   $(rs.stats.avtimems) ms                  
+            Allocs:     $(rs.stats.avallocs)     
+            Bytes:      $(rs.stats.avbytes)             
+            GC:          $(rs.stats.avgctimems) ms
             """, 
             SK.text_align_center_left) # 14 allocs
         SK.ui_window_end()
@@ -140,7 +152,6 @@ function render(rs::RenderState)::Void
 
         m = SK.matrix_trs(Ref(vec3(0, 0, -1.0)), Ref(ori), Ref(vec3(2.5, 2.5, 2.5)))
         SK.model_draw(rs.obj_model, m, color128(0.1, 0.1, 1.0, 1.0), SK.render_layer_0)
-
         updatefps(rs.stats)
     catch e
         println("Exception: $e in $(stacktrace(catch_backtrace())[1])")
