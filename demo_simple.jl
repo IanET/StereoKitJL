@@ -80,7 +80,7 @@ const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identi
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
-    frametime::Float64 = 0
+    frametime::Float64 = time()
     fps::Float32 = 0
     time::Float64 = 0
     bytes::Int64 = 0
@@ -95,7 +95,7 @@ end
 @kwdef mutable struct RenderState 
     floor_model::SK.model_t = C_NULL
     obj_model::SK.model_t = SK.model_t(C_NULL)
-    window_pos::vec3 = vec3(0.0, -0.05, -0.2)
+    window_pos::vec3 = vec3(0.0, -0.05, -0.3)
     obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
 end
@@ -108,8 +108,8 @@ function updatefps(fs::FrameStats)::Void
         
         fs.avallocs = fs.allocs ÷ fs.framecount
         fs.avbytes = fs.bytes ÷ fs.framecount
-        fs.avgctimems = fs.gctime * 1000 ÷ fs.framecount
-        fs.avtimems = fs.time * 1000 ÷ fs.framecount
+        fs.avgctimems = (fs.gctime * 1000) ÷ fs.framecount
+        fs.avtimems = (fs.time * 1000) ÷ fs.framecount
 
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
         fs.frametime = time()
