@@ -4,9 +4,6 @@ using Printf, IMisc
 
 # --- Helpers ---
 
-Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
-macro u8_str(s) transcode(Cchar, s) end
-macro u16_str(s) transcode(char16_t, s) end
 const cm2m = 0.01f0
 const mm2m = 0.001f0
 const vec3_zero = vec3(0,0,0)
@@ -80,12 +77,16 @@ const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identi
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
-    frametime::Float64 = 0
+    frametime::Float64 = time()
     fps::Float32 = 0
     time::Float64 = 0
     bytes::Int64 = 0
     allocs::Int64 = 0
     gctime::Float64 = 0
+    avtimems::Int = 0
+    avbytes::Int = 0
+    avallocs::Int = 0
+    avgctimems::Int = 0
 end
 
 @kwdef mutable struct RenderState 
@@ -128,11 +129,19 @@ function render(rs::RenderState)::Void
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
         fps = round(rs.stats.fps; digits=1)
         SK.ui_window_begin("Information", window_pose, vec2(7cm2m, 2cm2m), SK.ui_win_normal, SK.ui_move_face_user)
-        SK.ui_text("FPS:      $fps \nAllocs:  $(rs.stats.allocs) \nBytes:   $(rs.stats.bytes) \nGC:       $(rs.stats.gctime)ms", SK.text_align_center_left) # 14 allocs
+        SK.ui_text(
+            """
+            FPS:         $fps
+            Render:   $(rs.stats.avtimems) ms                  
+            Allocs:     $(rs.stats.avallocs)     
+            Bytes:      $(rs.stats.avbytes)             
+            GC:          $(rs.stats.avgctimems) ms
+            """, 
+            SK.text_align_center_left) # 14 allocs
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
-        rs.obj_ang += 0.05
+        rs.obj_ang += 0.2
         if (rs.obj_ang > 360) rs.obj_ang = 0 end
         ori = SK.quat_from_angles(22, rs.obj_ang, 22)
 
@@ -162,7 +171,7 @@ async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
 # --- Main --- 
 
-sk_init(app_name = "Test App", assets_folder = "assets")
+sk_init(app_name = "Test Perf", assets_folder = "assets")
 rs = RenderState()
 loadassets(rs)
 

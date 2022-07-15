@@ -4,9 +4,6 @@ using Printf, IMisc
 
 # --- Helpers ---
 
-Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
-macro u8_str(s) transcode(Cchar, s) end
-macro u16_str(s) transcode(char16_t, s) end
 const cm2m = 0.01f0
 const mm2m = 0.001f0
 const vec3_zero = vec3(0,0,0)
@@ -180,7 +177,7 @@ async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
 # --- Main --- 
 
-sk_init(app_name = "Test App", assets_folder = "assets")
+sk_init(app_name = "Cube", assets_folder = "assets")
 rs = RenderState()
 loadassets(rs)
 
