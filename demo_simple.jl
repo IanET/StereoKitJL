@@ -102,12 +102,10 @@ function updatefps(fs::FrameStats)::Void
     delta = time() - fs.frametime
     if delta >= 1.0
         fs.fps = fs.framecount / delta
-        
         fs.avallocs = fs.allocs ÷ fs.framecount
         fs.avbytes = fs.bytes ÷ fs.framecount
         fs.avgctimems = (fs.gctime * 1000) ÷ fs.framecount
         fs.avtimems = (fs.time * 1000) ÷ fs.framecount
-
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
         fs.frametime = time()
     end
