@@ -6,10 +6,11 @@ using Printf, IMisc
 
 const cm2m = 0.01f0
 const mm2m = 0.001f0
-const vec3_zero = vec3(0,0,0)
 
 Base.:(*)(a::vec3, b::vec3)::vec3 = vec3(a.x*b.x, a.y*b.y, a.z*b.z)
 Base.:(+)(a::vec3, b::vec3)::vec3 = vec3(a.x+b.x, a.y+b.y, a.z+b.z)
+vec3() = vec3(0, 0, 0)
+vec3(v) = vec3(v, v, v)
 
 function sk_renderloop(render::Function)::Void
     render_wrapper() = try render() catch end # Eat exceptions
@@ -70,10 +71,10 @@ const gray = color128(0.5, 0.5, 0.5, 1)
 const transparent_black = color128(0, 0, 0, 0)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
-const OBJ_POS = vec3(-0.25, 0, -0.5)
-const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
+# const OBJ_POS = vec3(-0.25, 0, -0.5)
+# const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
-
+const ROT_ANG_DELTA = 0.25
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
@@ -93,7 +94,7 @@ end
     floor_model::SK.model_t = C_NULL
     obj_model::SK.model_t = SK.model_t(C_NULL)
     window_pos::vec3 = vec3(0.0, -0.05, -0.3)
-    obj_ang::Float32 = 0
+    obj_pry::vec3 = vec3()
     stats::FrameStats = FrameStats()
 end
 
@@ -118,6 +119,51 @@ function updatetime(fs::FrameStats, stats)::Void
     fs.gctime += stats.gctime
 end
 
+function rotateObj(rs::RenderState)::Void
+    rot(r) = (r += ROT_ANG_DELTA; r > 360 ? r -= 360 : r)
+    (;x, y, z) = rs.obj_pry
+    rs.obj_pry = vec3(rot(x), rot(y), z)
+end
+
+function hslToRgb(h::Float32, s::Float32, l::Float32)::Tuple{Float32, Float32, Float32}
+    @assert h >= 0 && h <= 1.0
+    @assert s >= 0 && s <= 1.0
+    @assert l >= 0 && l <= 1.0
+
+    function hue2rgb(p, q, t)::Float32
+        if (t < 0) t += 1 end
+        if (t > 1) t -= 1 end
+        if (t < 1/6) return p + (q - p) * 6 * t end
+        if (t < 1/2) return q end
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6 end
+        return p
+    end
+
+    local r::Float32
+    local g::Float32 
+    local b::Float32
+    
+    if s == 0
+        r = g = b = l
+    else
+        q = l < 0.5 ? l * (s + 1) : (l + s) - (l * s)
+        p = (2 * l) - q
+        r = hue2rgb(p, q, h + 1/3)
+        g = hue2rgb(p, q, h)
+        b = hue2rgb(p, q, h - 1/3)
+    end
+    
+    return (r, g, b)
+end
+
+function prToCol(p::Float32, r::Float32)::color128
+    t = (p + r) / 720f0
+    (r, g, b) = hslToRgb(t, 0.75f0, 0.5f0) # easier to do color cylcing with hsl
+    return color128(r, g, b, 1.0) 
+end
+
+quat(v::vec3) = SK.quat_from_angles(v.x, v.y, v.z)
+
 function render(rs::RenderState)::Void 
     stats = @timed try 
         # SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
@@ -141,12 +187,11 @@ function render(rs::RenderState)::Void
         SK.ui_window_end()
         rs.window_pos = window_pose[].position
 
-        rs.obj_ang += 0.5
-        if (rs.obj_ang > 360) rs.obj_ang = 0 end
-        ori = SK.quat_from_angles(22, rs.obj_ang, 22)
+        rotateObj(rs)
+        col = prToCol(rs.obj_pry.x, rs.obj_pry.y)
+        m = SK.matrix_trs(vec3(0, 0, -1.0) |> Ref, quat(rs.obj_pry) |> Ref, vec3(2.5) |> Ref) # pos, orientation, scale
+        SK.model_draw(rs.obj_model, m, col, SK.render_layer_0)
 
-        m = SK.matrix_trs(Ref(vec3(0, 0, -1.0)), Ref(ori), Ref(vec3(2.5, 2.5, 2.5)))
-        SK.model_draw(rs.obj_model, m, color128(0.1, 0.1, 1.0, 1.0), SK.render_layer_0)
         updatefps(rs.stats)
     catch e
         println("Exception: $e in $(stacktrace(catch_backtrace())[1])")
@@ -173,16 +218,17 @@ end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
-# --- Main --- 
+function main()
+    sk_init(app_name = "Cube", assets_folder = "assets")
+    rs = RenderState()
+    loadassets(rs)
 
-sk_init(app_name = "Cube", assets_folder = "assets")
-rs = RenderState()
-loadassets(rs)
-
-# Async if in vscode, sync otherwise
-async(isinteractive()) do
-    sk_renderloop(() -> render(rs))
-    # ... cleanup assets ...
-    SK.sk_shutdown()
+    # Async if in vscode, sync otherwise
+    async(isinteractive()) do
+        sk_renderloop(() -> render(rs))
+        # ... cleanup assets ...
+        SK.sk_shutdown()
+    end
 end
 
+main()
