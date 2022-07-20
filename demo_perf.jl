@@ -144,11 +144,11 @@ function updatefps(rs::RenderState)::Void
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
         if rs.start_time == 0; rs.start_time = time()  end
 
-        inwarmup = (time() - rs.start_time) < WARMUP_S
         if fs.fps > TARGET_FPS 
             addObj(rs, rs.rate) 
-        else
+        elseif fs.fps < TARGET_FPS
             removeObj(rs, rs.rate)
+            inwarmup = (time() - rs.start_time) < WARMUP_S
             if !inwarmup; rs.rate ÷= 2 end
             if rs.rate == 0; rs.rate = 1 end
         end
