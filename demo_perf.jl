@@ -78,6 +78,8 @@ const X_RANGE = -0.75:0.01:0.75
 const Y_RANGE = -0.75:0.01:0.25
 const Z_RANGE = -2.5:0.01:-0.5
 const TARGET_FPS = 59
+const INITIAL_RATE = 100
+const WARMUP_S = 2.5 # run for at least this long before throttling
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
@@ -100,6 +102,8 @@ end
     obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
     objinfos::Vector{ray_t} = ray_t[]
+    start_time::Float64 = 0
+    rate::Int = INITIAL_RATE
 end
 
 randAngle() = rand() * 360
@@ -109,10 +113,28 @@ function addObj(rs::RenderState)
     push!(rs.objinfos, oi)
 end
 
+function addObj(rs::RenderState, count::Int)
+    for i in 1:count
+        addObj(rs)
+    end
+end
+
+function removeLastObj(rs::RenderState)
+    if length(rs.objinfos) <= 0; return end
+    deleteat!(rs.objinfos, lastindex(rs.objinfos))
+end
+
+function removeObj(rs::RenderState, count::Int)
+    for i in 1:count
+        removeLastObj(rs)
+    end
+end
+
 function updatefps(rs::RenderState)::Void
     fs = rs.stats
     fs.framecount += 1
     delta = time() - fs.frametime
+        
     if delta > 1.0
         fs.fps = fs.framecount / delta
         fs.avallocs = fs.allocs ÷ fs.framecount
@@ -120,6 +142,17 @@ function updatefps(rs::RenderState)::Void
         fs.avgctimems = round((fs.gctime * 1000) / fs.framecount, digits=2)
         fs.avtimems = round((fs.time * 1000) / fs.framecount, digits=2)
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
+        if rs.start_time == 0; rs.start_time = time()  end
+
+        inwarmup = (time() - rs.start_time) < WARMUP_S
+        if fs.fps > TARGET_FPS 
+            addObj(rs, rs.rate) 
+        else
+            removeObj(rs, rs.rate)
+            if !inwarmup; rs.rate ÷= 2 end
+            if rs.rate == 0; rs.rate = 1 end
+        end
+
         fs.frametime = time()
     end
 end
@@ -164,9 +197,6 @@ function render(rs::RenderState)::Void
             SK.model_draw(rs.obj_model, m, col_from_pos(objinfo.pos), SK.render_layer_0)
         end
 
-        # instfps = rs.stats.framecount / (time() - rs.stats.frametime) 
-        # if (instfps >= TARGET_FPS) addObj(rs) end
-        if (fps >= TARGET_FPS) addObj(rs) end
         updatefps(rs)
     catch e
         println("Exception: $e in $(stacktrace(catch_backtrace())[1])")
