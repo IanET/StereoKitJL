@@ -113,22 +113,14 @@ function addObj(rs::RenderState)
     push!(rs.objinfos, oi)
 end
 
-function addObj(rs::RenderState, count::Int)
-    for i in 1:count
-        addObj(rs)
-    end
-end
+addObj(rs::RenderState, count::Int) = foreach(i -> addObj(rs), 1:count)
 
 function removeLastObj(rs::RenderState)
     if length(rs.objinfos) <= 0; return end
     deleteat!(rs.objinfos, lastindex(rs.objinfos))
 end
 
-function removeObj(rs::RenderState, count::Int)
-    for i in 1:count
-        removeLastObj(rs)
-    end
-end
+removeObj(rs::RenderState, count::Int) = foreach(i -> removeLastObj(rs), 1:count)
 
 function updatefps(rs::RenderState)::Void
     fs = rs.stats
@@ -216,16 +208,18 @@ end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
-# --- Main --- 
+function main()
+    sk_init(app_name = "Test Perf", assets_folder = "assets", flatscreen_width = 1024, flatscreen_height = 768)
+    rs = RenderState()
+    loadassets(rs)
 
-sk_init(app_name = "Test Perf", assets_folder = "assets")
-rs = RenderState()
-loadassets(rs)
-
-# Async if in vscode, sync otherwise
-async(isinteractive()) do
-    sk_renderloop(() -> render(rs))
-    # ... cleanup assets ...
-    SK.sk_shutdown()
+    # Async if in vscode, sync otherwise
+    async(isinteractive()) do
+        sk_renderloop(() -> render(rs))
+        # ... cleanup assets ...
+        SK.sk_shutdown()
+    end
 end
+
+main()
 
