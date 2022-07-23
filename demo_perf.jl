@@ -36,7 +36,7 @@ function sk_init(;
     flatscreen_width::Int = 0, 
     flatscreen_height::Int = 0, 
     disable_flatscreen_mr_sim::Bool = false,
-    disable_unfocused_sleep::Bool = false)
+    disable_unfocused_sleep::Bool = true)
 
     GC.@preserve app_name assets_folder begin 
         settings = SK.sk_settings_t(
@@ -78,7 +78,7 @@ const X_RANGE = -0.75:0.01:0.75
 const Y_RANGE = -0.75:0.01:0.25
 const Z_RANGE = -2.5:0.01:-0.5
 const TARGET_FPS = 59
-const INITIAL_RATE = 100
+const MAX_RATE = 500
 const WARMUP_S = 2.5 # run for at least this long before throttling
 
 @kwdef mutable struct FrameStats
@@ -93,6 +93,7 @@ const WARMUP_S = 2.5 # run for at least this long before throttling
     avbytes::Int = 0
     avallocs::Int = 0
     avgctimems::Float32 = 0
+    lastfps::Float32 = 0
 end
 
 @kwdef mutable struct RenderState 
@@ -102,8 +103,7 @@ end
     obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
     objinfos::Vector{ray_t} = ray_t[]
-    start_time::Float64 = 0
-    rate::Int = INITIAL_RATE
+    rate::Int = MAX_RATE ÷ 2
 end
 
 randAngle() = rand() * 360
@@ -128,22 +128,28 @@ function updatefps(rs::RenderState)::Void
     delta = time() - fs.frametime
         
     if delta > 1.0
+        fs.lastfps = fs.fps
         fs.fps = fs.framecount / delta
         fs.avallocs = fs.allocs ÷ fs.framecount
         fs.avbytes = fs.bytes ÷ fs.framecount
         fs.avgctimems = round((fs.gctime * 1000) / fs.framecount, digits=2)
         fs.avtimems = round((fs.time * 1000) / fs.framecount, digits=2)
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
-        if rs.start_time == 0; rs.start_time = time()  end
 
         if fs.fps > TARGET_FPS 
             addObj(rs, rs.rate) 
         elseif fs.fps < TARGET_FPS
             removeObj(rs, rs.rate)
-            inwarmup = (time() - rs.start_time) < WARMUP_S
-            if !inwarmup; rs.rate ÷= 2 end
-            if rs.rate == 0; rs.rate = 1 end
         end
+
+        if fs.fps > TARGET_FPS && fs.lastfps > TARGET_FPS
+            rs.rate = (rs.rate * 1.25 |> round |> Int) + 1
+        elseif fs.fps < TARGET_FPS * 0.9 && fs.lastfps < TARGET_FPS * 0.9
+            rs.rate *= 2
+        elseif fs.fps < TARGET_FPS 
+            rs.rate ÷= 2
+        end
+        rs.rate = clamp(rs.rate, 1, MAX_RATE)
 
         fs.frametime = time()
     end
