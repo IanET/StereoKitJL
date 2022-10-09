@@ -195,6 +195,9 @@ function render(rs::RenderState)::Void
             SK.model_draw(rs.obj_model, m, col_from_pos(objinfo.pos), SK.render_layer_0)
         end
 
+        # instfps = rs.stats.framecount / (time() - rs.stats.frametime) 
+        # if (instfps >= TARGET_FPS) addObj(rs) end
+        if (fps >= TARGET_FPS) addObj(rs) end
         updatefps(rs)
     catch e
         println("Exception: $e in $(stacktrace(catch_backtrace())[1])")
