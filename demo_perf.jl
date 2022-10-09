@@ -36,7 +36,7 @@ function sk_init(;
     flatscreen_width::Int = 0, 
     flatscreen_height::Int = 0, 
     disable_flatscreen_mr_sim::Bool = false,
-    disable_unfocused_sleep::Bool = false)
+    disable_unfocused_sleep::Bool = true)
 
     GC.@preserve app_name assets_folder begin 
         settings = SK.sk_settings_t(
@@ -78,6 +78,8 @@ const X_RANGE = -0.75:0.01:0.75
 const Y_RANGE = -0.75:0.01:0.25
 const Z_RANGE = -2.5:0.01:-0.5
 const TARGET_FPS = 59
+const MAX_RATE = 500
+const WARMUP_S = 2.5 # run for at least this long before throttling
 
 @kwdef mutable struct FrameStats
     framecount::Int = 0
@@ -91,6 +93,7 @@ const TARGET_FPS = 59
     avbytes::Int = 0
     avallocs::Int = 0
     avgctimems::Float32 = 0
+    lastfps::Float32 = 0
 end
 
 @kwdef mutable struct RenderState 
@@ -100,6 +103,7 @@ end
     obj_ang::Float32 = 0
     stats::FrameStats = FrameStats()
     objinfos::Vector{ray_t} = ray_t[]
+    rate::Int = MAX_RATE ÷ 2
 end
 
 randAngle() = rand() * 360
@@ -109,17 +113,44 @@ function addObj(rs::RenderState)
     push!(rs.objinfos, oi)
 end
 
+addObj(rs::RenderState, count::Int) = foreach(i -> addObj(rs), 1:count)
+
+function removeLastObj(rs::RenderState)
+    if length(rs.objinfos) <= 0; return end
+    deleteat!(rs.objinfos, lastindex(rs.objinfos))
+end
+
+removeObj(rs::RenderState, count::Int) = foreach(i -> removeLastObj(rs), 1:count)
+
 function updatefps(rs::RenderState)::Void
     fs = rs.stats
     fs.framecount += 1
     delta = time() - fs.frametime
+        
     if delta > 1.0
+        fs.lastfps = fs.fps
         fs.fps = fs.framecount / delta
         fs.avallocs = fs.allocs ÷ fs.framecount
         fs.avbytes = fs.bytes ÷ fs.framecount
         fs.avgctimems = round((fs.gctime * 1000) / fs.framecount, digits=2)
         fs.avtimems = round((fs.time * 1000) / fs.framecount, digits=2)
         fs.framecount = fs.allocs = fs.bytes = fs.gctime = fs.time = 0
+
+        if fs.fps > TARGET_FPS 
+            addObj(rs, rs.rate) 
+        elseif fs.fps < TARGET_FPS
+            removeObj(rs, rs.rate)
+        end
+
+        if fs.fps > TARGET_FPS && fs.lastfps > TARGET_FPS
+            rs.rate = (rs.rate * 1.25 |> round |> Int) + 1
+        elseif fs.fps < TARGET_FPS * 0.9 && fs.lastfps < TARGET_FPS * 0.9
+            rs.rate *= 2
+        elseif fs.fps < TARGET_FPS 
+            rs.rate ÷= 2
+        end
+        rs.rate = clamp(rs.rate, 1, MAX_RATE)
+
         fs.frametime = time()
     end
 end
@@ -186,16 +217,18 @@ end
 
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
-# --- Main --- 
+function main()
+    sk_init(app_name = "Test Perf", assets_folder = "assets", flatscreen_width = 1024, flatscreen_height = 768)
+    rs = RenderState()
+    loadassets(rs)
 
-sk_init(app_name = "Test Perf", assets_folder = "assets")
-rs = RenderState()
-loadassets(rs)
-
-# Async if in vscode, sync otherwise
-async(isinteractive()) do
-    sk_renderloop(() -> render(rs))
-    # ... cleanup assets ...
-    SK.sk_shutdown()
+    # Async if in vscode, sync otherwise
+    async(isinteractive()) do
+        sk_renderloop(() -> render(rs))
+        # ... cleanup assets ...
+        SK.sk_shutdown()
+    end
 end
+
+main()
 
