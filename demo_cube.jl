@@ -61,32 +61,39 @@ end
     floor_model::SK.model_t = C_NULL
 end
 
-const grs = RenderState()
-const render_rs() = render(grs)
-const render_rs_c = @cfunction(render_rs, Nothing, ())
+# const grs = RenderState()
+# const render_rs() = render(grs)
+# const render_rs_c = @cfunction(render_rs, Nothing, ())
 
 function render(rs::RenderState) 
-    SK.render_add_model(rs.floor_model, Ref(rs.floor_transform), WHITE, SK.render_layer_0)
-    bounds = SK.model_get_bounds(rs.cube_model)
-    SK.ui_handle_begin("Cube", rs.cube_pose_r, bounds, 0, SK.ui_move_exact)
-    SK.ui_handle_end()
-    matrix = SK.matrix_trs(Ref(rs.cube_pose_r[].position), Ref(rs.cube_pose_r[].orientation), Ref(vec3(1, 1, 1)))
-    SK.render_add_model(rs.cube_model, Ref(matrix), BLUEISH, SK.render_layer_0)
+    try
+        SK.render_add_model(rs.floor_model, Ref(rs.floor_transform), WHITE, SK.render_layer_0)
+        bounds = SK.model_get_bounds(rs.cube_model)
+        SK.ui_handle_begin("Cube", rs.cube_pose_r, bounds, 0, SK.ui_move_exact)
+        SK.ui_handle_end()
+        matrix = SK.matrix_trs(Ref(rs.cube_pose_r[].position), Ref(rs.cube_pose_r[].orientation), Ref(vec3(1, 1, 1)))
+        SK.render_add_model(rs.cube_model, Ref(matrix), BLUEISH, SK.render_layer_0)
+    catch exc
+        println("Exception: $exc")
+    end
 end
 
 function main()
-    global grs
+    rs = RenderState()
 
     sk_init(app_name = "Cube Test App", assets_folder = "assets")
-    
+
     material = SK.material_find("default/material")
     mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
-    grs.cube_model = SK.model_create_mesh(mesh, material)
+    rs.cube_model = SK.model_create_mesh(mesh, material)
 
     floor_mesh = SK.mesh_find("default/mesh_cube")
     floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
     SK.material_set_transparency(floor_material, SK.transparency_blend)
-    grs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
+    rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
+
+    render_rs() = render(rs)
+    render_rs_c = @cfunction($render_rs, Nothing, ())
 
     while SK.sk_step(render_rs_c) > 0 end
 
