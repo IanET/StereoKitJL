@@ -71,8 +71,6 @@ const gray = color128(0.5, 0.5, 0.5, 1)
 const transparent_black = color128(0, 0, 0, 0)
 const blueish = color128(0.5, 0.6, 0.7, 1.0)
 const quat_identity = SK.quat(0, 0, 0, 1)
-# const OBJ_POS = vec3(-0.25, 0, -0.5)
-# const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
 const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
 const ROT_ANG_DELTA = 0.25
 
@@ -92,7 +90,7 @@ end
 
 @kwdef mutable struct RenderState 
     floor_model::SK.model_t = C_NULL
-    obj_model::SK.model_t = SK.model_t(C_NULL)
+    obj_model::SK.model_t = C_NULL
     window_pos::vec3 = vec3(0.0, -0.05, -0.3)
     obj_pry::vec3 = vec3()
     stats::FrameStats = FrameStats()
@@ -201,13 +199,7 @@ function render(rs::RenderState)::Void
 end
 
 function loadassets(rs::RenderState)::Void
-    # floor_mesh = SK.mesh_find("default/mesh_cube")
-    # floor_material = SK.shader_create_file("floor.hlsl") |> SK.material_create
-    # SK.material_set_transparency(floor_material, SK.transparency_blend)
-    # rs.floor_model = SK.model_create_mesh(floor_mesh, floor_material)
-    
     material = SK.material_find("default/material")
-    # mesh = SK.mesh_gen_rounded_cube(vec3(0.25, 0.25, 0.25), 0.02, 4)
     mesh = SK.mesh_gen_cube(vec3(0.25, 0.25, 0.25), 4)
     rs.obj_model = SK.model_create_mesh(mesh, material)
 
