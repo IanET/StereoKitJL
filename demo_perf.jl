@@ -63,6 +63,7 @@ function sk_init(;
 end
 
 # --- App ---
+const TARGET_FPS = 29
 
 const white = color128(1, 1, 1, 1)
 const black = color128(0, 0, 0, 1)
@@ -77,7 +78,6 @@ const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identi
 const X_RANGE = -0.75:0.01:0.75
 const Y_RANGE = -0.75:0.01:0.25
 const Z_RANGE = -2.5:0.01:-0.5
-const TARGET_FPS = 59
 const MAX_RATE = 500
 const WARMUP_S = 2.5 # run for at least this long before throttling
 
