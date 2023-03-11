@@ -4,11 +4,6 @@ import Base.@kwdef
 
 using Printf, IMisc
 
-# HACK, Julia strings are UTF8 internally
-# Base.transcode(::Type{Cchar}, s::String) = reinterpret(Cchar, transcode(UInt8, s))
-# macro c8_str(s) transcode(Cchar, s) end
-# macro c16_str(s) transcode(char16_t, s) end
-
 const WHITE = SK.color128(1, 1, 1, 1)
 const BLUEISH = SK.color128(0.5, 0.6, 0.7, 1.0)
 const QUAT_IDENTITY = SK.quat(0, 0, 0, 1)
@@ -60,10 +55,6 @@ end
     floor_transform::SK.matrix = SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(QUAT_IDENTITY), Ref(vec3(30, 0.1, 30)))
     floor_model::SK.model_t = C_NULL
 end
-
-# const grs = RenderState()
-# const render_rs() = render(grs)
-# const render_rs_c = @cfunction(render_rs, Nothing, ())
 
 function render(rs::RenderState) 
     try
