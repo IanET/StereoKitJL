@@ -5,7 +5,6 @@ import LibStereoKit: vec2, vec3, quat, color128, char16_t, bool32_t # Base SK ty
 
 include("common.jl")
 
-# const FLOOR_TRANSFORM = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(QUAT_IDENTITY), Ref(vec3(30, 0.1, 30))))
 const ROT_ANG_DELTA = 0.25
 
 @kwdef mutable struct FrameStats
@@ -57,19 +56,19 @@ function rotateObj(rs::RenderState)::Void
     rs.obj_pry = vec3(rot(x), rot(y), z)
 end
 
+function hue2rgb(p, q, t)::Float32
+    if (t < 0) t += 1 end
+    if (t > 1) t -= 1 end
+    if (t < 1/6) return p + (q - p) * 6 * t end
+    if (t < 1/2) return q end
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6 end
+    return p
+end
+
 function hslToRgb(h::Float32, s::Float32, l::Float32)::Tuple{Float32, Float32, Float32}
     @assert h >= 0 && h <= 1.0
     @assert s >= 0 && s <= 1.0
     @assert l >= 0 && l <= 1.0
-
-    function hue2rgb(p, q, t)::Float32
-        if (t < 0) t += 1 end
-        if (t > 1) t -= 1 end
-        if (t < 1/6) return p + (q - p) * 6 * t end
-        if (t < 1/2) return q end
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6 end
-        return p
-    end
 
     local r::Float32
     local g::Float32 
@@ -98,8 +97,6 @@ quat(v::vec3) = SK.quat_from_angles(v.x, v.y, v.z)
 
 function render(rs::RenderState)::Void 
     stats = @timed try 
-        # SK.render_add_model(rs.floor_model, FLOOR_TRANSFORM, white, SK.render_layer_0)
-        
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
         
