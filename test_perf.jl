@@ -1,81 +1,16 @@
-import LibStereoKit as SK
-import LibStereoKit: vec2, vec3, quat, color128, char16_t, bool32_t, ray_t # Base SK types
 using Printf, IMisc
 
-# --- Helpers ---
+import LibStereoKit as SK
+import LibStereoKit: vec2, vec3, quat, color128, char16_t, bool32_t, ray_t # Base SK types
 
-const cm2m = 0.01f0
-const mm2m = 0.001f0
-const vec3_zero = vec3(0,0,0)
+include("common.jl")
 
-Base.:(*)(a::vec3, b::vec3)::vec3 = vec3(a.x*b.x, a.y*b.y, a.z*b.z)
-Base.:(+)(a::vec3, b::vec3)::vec3 = vec3(a.x+b.x, a.y+b.y, a.z+b.z)
+const TARGET_FPS = 29   
 
-function sk_renderloop(render::Function)::Void
-    render_wrapper() = try render() catch end # Eat exceptions
-    render_wrapper_c = @cfunction($render_wrapper, Void, ()) # Not supported on all cpu architectures
-    if isinteractive()
-        while SK.sk_step(render_wrapper_c) > 0; sleep(0.01) end
-    else
-        while SK.sk_step(render_wrapper_c) > 0; end
-    end
-end
-
-function sk_init(;
-    app_name::String = "",
-    assets_folder::String = "",
-    display_preference::SK.display_mode_ = SK.display_mode_mixedreality,
-    blend_preference::SK.display_blend_ = SK.display_blend_any_transparent,
-    no_flatscreen_fallback::Bool = false,
-    depth_mode::SK.depth_mode_ = SK.depth_mode_balanced,
-    log_filter::SK.log_ = SK.log_diagnostic,
-    overlay_app::Bool = false,
-    overlay_priority::Int = 0, 
-    flatscreen_pos_x::Int = 0,
-    flatscreen_pos_y::Int = 0, 
-    flatscreen_width::Int = 0, 
-    flatscreen_height::Int = 0, 
-    disable_flatscreen_mr_sim::Bool = false,
-    disable_unfocused_sleep::Bool = true)
-
-    GC.@preserve app_name assets_folder begin 
-        settings = SK.sk_settings_t(
-            pointer(app_name),
-            pointer(assets_folder),
-            display_preference,
-            blend_preference,
-            no_flatscreen_fallback |> bool32_t,
-            depth_mode,
-            log_filter,
-            overlay_app,
-            overlay_priority |> UInt32,
-            flatscreen_pos_x |> Int32,
-            flatscreen_pos_y |> Int32,
-            flatscreen_width |> Int32,
-            flatscreen_height |> Int32,
-            disable_flatscreen_mr_sim |> bool32_t,
-            disable_unfocused_sleep |> bool32_t,
-            C_NULL, 
-            C_NULL
-        )
-        SK.sk_init(settings)
-    end
-end
-
-# --- App ---
-
-const TARGET_FPS = 29
-
-const white = color128(1, 1, 1, 1)
-const black = color128(0, 0, 0, 1)
-const gray = color128(0.5, 0.5, 0.5, 1)
-const transparent_black = color128(0, 0, 0, 0)
-const blueish = color128(0.5, 0.6, 0.7, 1.0)
-const quat_identity = SK.quat(0, 0, 0, 1)
 const OBJ_POS = vec3(-0.25, 0, -0.5)
 const OBJ_ORI = SK.quat_from_angles(22, 90, 22)
 const OBJ_SCALE = vec3(0.25, 0.25, 0.35)
-const floor_transform = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(quat_identity), Ref(vec3(30, 0.1, 30))))
+const FLOOR_TRANSFORM = Ref(SK.matrix_trs(Ref(vec3(0, -1.5, 0)), Ref(QUAT_IDENTITY), Ref(vec3(30, 0.1, 30))))
 const X_RANGE = -0.75:0.01:0.75
 const Y_RANGE = -0.75:0.01:0.25
 const Z_RANGE = -2.5:0.01:-0.5
@@ -168,7 +103,7 @@ col_from_pos(v::vec3) = col_from_pos(v.x, v.y, v.z)
 
 function render(rs::RenderState)::Void 
     stats = @timed try 
-        SK.render_add_model(rs.floor_model, floor_transform, white, SK.render_layer_0)
+        SK.render_add_model(rs.floor_model, FLOOR_TRANSFORM, COLOR_WHITE, SK.render_layer_0)
         
         head_pose = SK.input_head() |> unsafe_load
         window_pose = Ref(SK.pose_t(rs.window_pos, SK.quat_lookat(Ref(rs.window_pos), Ref(head_pose.position))))
@@ -219,7 +154,7 @@ end
 async(f::Function, isasync::Bool)::Void = (isasync ? @async(f()) : f())
 
 function main()
-    sk_init(app_name = "Test Perf", assets_folder = "assets", flatscreen_width = 1024, flatscreen_height = 768)
+    sk_init(app_name = "Test Perf", assets_folder = "C:\\src\\StereoKitJL\\assets", flatscreen_width = 1024, flatscreen_height = 768)
     rs = RenderState()
     loadassets(rs)
 
